@@ -1,6 +1,7 @@
 import math
-from PyQt4.QtGui import *
-from PyQt4.Qt import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
 
 
 class ItemInserter(QObject):
@@ -73,7 +74,7 @@ class PointItemInserter(ItemInserter):
         if self._commit:
             image_item.addAnnotation(self._ann)
         self._item = QGraphicsEllipseItem(QRectF(pos.x() - 2,
-                                          pos.y() - 2, 5, 5))
+                                                 pos.y() - 2, 5, 5))
         self._item.setPen(self.pen())
         self.annotationFinished.emit()
         event.accept()
@@ -116,8 +117,8 @@ class RectItemInserter(ItemInserter):
             horizontalHelpLine.setPen(self._helpLinesPen)
             verticalHelpLine.setPen(self._helpLinesPen)
 
-            group.addToGroup(verticalHelpLine);
-            group.addToGroup(horizontalHelpLine);
+            group.addToGroup(verticalHelpLine)
+            group.addToGroup(horizontalHelpLine)
 
             self._scene.addItem(self._helpLines)
         else:
@@ -131,7 +132,7 @@ class RectItemInserter(ItemInserter):
     def mouseReleaseEvent(self, event, image_item):
         if self._item is not None:
             if self._item.rect().width() > 1 and \
-               self._item.rect().height() > 1:
+                    self._item.rect().height() > 1:
                 rect = self._item.rect()
                 self._ann.update({self._prefix + 'x': rect.x(),
                                   self._prefix + 'y': rect.y(),
@@ -268,10 +269,10 @@ class SequenceItemInserter(ItemInserter):
 
 class BBoxFaceInserter(SequenceItemInserter):
     inserters = [
-        (RectItemInserter,  "bbox", "Labelling bounding box"),
-        (PointItemInserter, "lec",  "Labelling left eye center"),
-        (PointItemInserter, "rec",  "Labelling right eye center"),
-        (PointItemInserter, "mc",   "Labelling mouth center"),
+        (RectItemInserter, "bbox", "Labelling bounding box"),
+        (PointItemInserter, "lec", "Labelling left eye center"),
+        (PointItemInserter, "rec", "Labelling right eye center"),
+        (PointItemInserter, "mc", "Labelling mouth center"),
     ]
 
     def toggleOccludedForCurrentInserter(self):
@@ -317,12 +318,12 @@ class BBoxFaceInserter(SequenceItemInserter):
 
 class NPointFaceInserter(SequenceItemInserter):
     inserters = [
-            (PointItemInserter, "leoc", "left eye outer corner"),
-            (PointItemInserter, "leic", "left eye inner corner"),
-            (PointItemInserter, "reic", "right eye inner corner"),
-            (PointItemInserter, "reoc", "right eye outer corner"),
-            (PointItemInserter, "nt",   "nose tip"),
-            (PointItemInserter, "ulc",  "upper lip center"),
+        (PointItemInserter, "leoc", "left eye outer corner"),
+        (PointItemInserter, "leic", "left eye inner corner"),
+        (PointItemInserter, "reic", "right eye inner corner"),
+        (PointItemInserter, "reoc", "right eye outer corner"),
+        (PointItemInserter, "nt", "nose tip"),
+        (PointItemInserter, "ulc", "upper lip center"),
     ]
 
     def toggleOccludedForCurrentInserter(self):
@@ -365,7 +366,7 @@ class PolygonItemInserter(ItemInserter):
 
     def _removeLastPointAndFinish(self, image_item):
         polygon = self._item.polygon()
-        polygon.remove(polygon.size()-1)
+        polygon.remove(polygon.size() - 1)
         assert polygon.size() > 0
         self._item.setPolygon(polygon)
 
@@ -377,7 +378,7 @@ class PolygonItemInserter(ItemInserter):
         self._item = None
         self._scene.clearMessage()
 
-        self.inserterFinished.emit()
+        # self.inserterFinished.emit()
 
     def mousePressEvent(self, event, image_item):
         pos = event.scenePos()
@@ -404,10 +405,28 @@ class PolygonItemInserter(ItemInserter):
         # Even then, the last point of the polygon is duplicate as it would be
         # shortly after a single mouse press. At this point, we want to throw it
         # away.
-        self._removeLastPointAndFinish(image_item)
+        # self._removeLastPointAndFinish(image_item)
+        pass
 
         event.accept()
 
+    def mouseRightClickEvent(self, event, image_item):
+        """Finish the polygon when the user double clicks."""
+
+        # No need to add the position of the click, as a single mouse
+        # press event added the point already.
+        # Even then, the last point of the polygon is duplicate as it would be
+        # shortly after a single mouse press. At this point, we want to throw it
+        # away.
+
+        polygon = self._item.polygon()
+        if len(polygon) > 1:
+            n = polygon.size()
+            polygon.remove(n - 1)
+            self._item.setPolygon(polygon)
+            QGraphicsPolygonItem(polygon)
+
+        event.accept()
 
     def mouseMoveEvent(self, event, image_item):
         if self._item is not None:
@@ -428,6 +447,14 @@ class PolygonItemInserter(ItemInserter):
             # to the polygon when pressing the mouse button. At this point,
             # we want to throw it away.
             self._removeLastPointAndFinish(image_item)
+
+        if event.key() == Qt.Key_Q and self._item is not None:
+            polygon = self._item.polygon()
+            if len(polygon) > 1:
+                n = polygon.size()
+                polygon.remove(n - 1)
+                self._item.setPolygon(polygon)
+                QGraphicsPolygonItem(polygon)
 
     def abort(self):
         if self._item is not None:

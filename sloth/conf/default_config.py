@@ -36,40 +36,49 @@
 LABELS = (
     {
         'attributes': {
-            'class':      'Face',
+            'class':      'mya',
         },
         'inserter': 'sloth.items.RectItemInserter',
         'item':     'sloth.items.RectItem',
         'hotkey':   'f',
-        'text':     'Face',
+        'text':     'mya',
     },
     {
         'attributes': {
-            'class':      'rect',
+            'class':      'mko',
         },
         'inserter': 'sloth.items.RectItemInserter',
         'item':     'sloth.items.RectItem',
-        'hotkey':   'r',
-        'text':     'Rectangle',
+        'hotkey':   'f',
+        'text':     'mko',
     },
     {
         'attributes': {
-            'class':    'point',
+            'class':      'ipo',
         },
-        'inserter': 'sloth.items.PointItemInserter',
-        'item':     'sloth.items.PointItem',
-        'hotkey':   'p',
-        'text':     'Point',
+        'inserter': 'sloth.items.RectItemInserter',
+        'item':     'sloth.items.RectItem',
+        'hotkey':   'f',
+        'text':     'ipo',
     },
-    {
-        'attributes': {
-            'class':    'polygon',
-        },
-        'inserter': 'sloth.items.PolygonItemInserter',
-        'item':     'sloth.items.PolygonItem',
-        'hotkey':   'o',
-        'text':     'Polygon',
-    },
+    # {
+    #     'attributes': {
+    #         'class':    'point',
+    #     },
+    #     'inserter': 'sloth.items.PointItemInserter',
+    #     'item':     'sloth.items.PointItem',
+    #     'hotkey':   'p',
+    #     'text':     'Point',
+    # },
+    # {
+    #     'attributes': {
+    #         'class':    'polygon',
+    #     },
+    #     'inserter': 'sloth.items.PolygonItemInserter',
+    #     'item':     'sloth.items.PolygonItem',
+    #     'hotkey':   'o',
+    #     'text':     'Polygon',
+    # },
 )
 
 # HOTKEYS
@@ -91,7 +100,7 @@ HOTKEYS = (
     ('Tab',       lambda lt: lt.selectNextAnnotation(),      'Select next annotation'),
     ('Shift+Tab', lambda lt: lt.selectPreviousAnnotation(),  'Select previous annotation'),
     ('Ctrl+f',    lambda lt: lt.view().fitInView(),          'Fit current image/frame into window'),
-    ('Del',       lambda lt: lt.deleteSelectedAnnotations(), 'Delete selected annotations'),
+    ('D',         lambda lt: lt.deleteSelectedAnnotations(), 'Delete selected annotations'),
     ('ESC',       lambda lt: lt.exitInsertMode(),            'Exit insert mode'),
     ('Shift+l',   lambda lt: lt.currentImage().setUnlabeled(False), 'Mark current image as labeled'),
     ('Shift+c',   lambda lt: lt.currentImage().confirmAll(), 'Mark all annotations in image as confirmed'),

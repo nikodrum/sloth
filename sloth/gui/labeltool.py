@@ -2,11 +2,15 @@
 import logging, os
 import functools
 import fnmatch
-from PyQt4.QtGui import QMainWindow, QSizePolicy, QWidget, QVBoxLayout, QAction,\
-        QKeySequence, QLabel, QItemSelectionModel, QMessageBox, QFileDialog, QFrame, \
-        QDockWidget, QProgressBar, QProgressDialog
-from PyQt4.QtCore import SIGNAL, QSettings, QSize, QPoint, QVariant, QFileInfo, QTimer, pyqtSignal, QObject
-import PyQt4.uic as uic
+#from PyQt4.QtGui import QMainWindow, QSizePolicy, QWidget, QVBoxLayout, QAction,\
+#        QKeySequence, QLabel, QItemSelectionModel, QMessageBox, QFileDialog, QFrame, \
+#        QDockWidget, QProgressBar, QProgressDialog
+#from PyQt4.QtCore import SIGNAL, QSettings, QSize, QPoint, QVariant, QFileInfo, QTimer, pyqtSignal, QObject
+#import PyQt4.uic as uic
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
+import PyQt5.uic as uic
 from sloth.gui import qrc_icons  # needed for toolbar icons
 from sloth.gui.propertyeditor import PropertyEditor
 from sloth.gui.annotationscene import AnnotationScene
@@ -129,7 +133,7 @@ class MainWindow(QMainWindow):
 
         img = self.labeltool.getImage(new_image)
 
-        if img == None:
+        if img is None:
             self.controls.setFilename("")
             self.selectionmodel.setCurrentIndex(new_image.index(), QItemSelectionModel.ClearAndSelect|QItemSelectionModel.Rows)
             return
@@ -232,10 +236,10 @@ class MainWindow(QMainWindow):
 
         # get inserters and items from labels
         # FIXME for handling the new-style config correctly
-        inserters = dict([(label['attributes']['class'], label['inserter']) 
+        inserters = dict([(label['attributes']['class'], label['inserter'])
                           for label in config.LABELS
                           if 'class' in label.get('attributes', {}) and 'inserter' in label])
-        items = dict([(label['attributes']['class'], label['item']) 
+        items = dict([(label['attributes']['class'], label['item'])
                       for label in config.LABELS
                       if 'class' in label.get('attributes', {}) and 'item' in label])
 
@@ -256,9 +260,8 @@ class MainWindow(QMainWindow):
         self.central_widget = QWidget()
         self.central_layout = QVBoxLayout()
         self.controls = ControlButtonWidget()
-        #give functions as lambdas, or else they will be called with a bool as parameter
-        self.controls.back_button.clicked.connect(lambda lt: self.labeltool.gotoPrevious())
-        self.controls.forward_button.clicked.connect(lambda lt: self.labeltool.gotoNext())
+        self.controls.back_button.clicked.connect(self.labeltool.gotoPrevious)
+        self.controls.forward_button.clicked.connect(self.labeltool.gotoNext)
 
         self.central_layout.addWidget(self.controls)
         self.central_layout.addWidget(self.view)
@@ -301,7 +304,7 @@ class MainWindow(QMainWindow):
         self.copyAnnotations = CopyAnnotations(self.labeltool)
         self.interpolateRange = InterpolateRange(self.labeltool)
 
-        # Show the UI.  It is important that this comes *after* the above 
+        # Show the UI.  It is important that this comes *after* the above
         # adding of custom widgets, especially the central widget.  Otherwise the
         # dock widgets would be far to large.
         self.ui.show()
@@ -397,9 +400,9 @@ class MainWindow(QMainWindow):
             path = QFileInfo(filename).path()
 
         format_str = ' '.join(self.labeltool.getAnnotationFilePatterns())
-        fname = QFileDialog.getOpenFileName(self, 
+        fname = QFileDialog.getOpenFileName(self,
                 "%s - Load Annotations" % APP_NAME, path,
-                "%s annotation files (%s)" % (APP_NAME, format_str))
+                "%s annotation files (%s)" % (APP_NAME, format_str))[0]
         if len(str(fname)) > 0:
             self.labeltool.loadAnnotations(fname)
 
@@ -414,7 +417,7 @@ class MainWindow(QMainWindow):
         format_str = ' '.join(self.labeltool.getAnnotationFilePatterns())
         fname = QFileDialog.getSaveFileName(self,
                 "%s - Save Annotations" % APP_NAME, fname,
-                "%s annotation files (%s)" % (APP_NAME, format_str))
+                "%s annotation files (%s)" % (APP_NAME, format_str))[0]
 
         if len(str(fname)) > 0:
             return self.labeltool.saveAnnotations(str(fname))
@@ -426,10 +429,10 @@ class MainWindow(QMainWindow):
         if (filename is not None) and (len(filename) > 0):
             path = QFileInfo(filename).path()
 
-        image_types = [ '*.jpg', '*.bmp', '*.png', '*.pgm', '*.ppm', '*.tiff', '*.tif', '*.gif' ]
+        image_types = [ '*.jpg', '*.bmp', '*.png', '*.pgm', '*.ppm', '*.ppm', '*.tif', '*.gif' ]
         video_types = [ '*.mp4', '*.mpg', '*.mpeg', '*.avi', '*.mov', '*.vob' ]
         format_str = ' '.join(image_types + video_types)
-        fnames = QFileDialog.getOpenFileNames(self, "%s - Add Media File" % APP_NAME, path, "Media files (%s)" % (format_str, ))
+        fnames = QFileDialog.getOpenFileNames(self, "%s - Add Media File" % APP_NAME, path, "Media files (%s)" % (format_str, ))[0]
 
         item = None
         numFiles = len(fnames)
@@ -444,22 +447,22 @@ class MainWindow(QMainWindow):
                 fname = os.path.relpath(fname, str(path))
 
             for pattern in image_types:
-                if fnmatch.fnmatch(fname.lower(), pattern):
+                if fnmatch.fnmatch(fname, pattern):
                     item = self.labeltool.addImageFile(fname)
-            
+
             progress_bar.setValue(c)
 
         if item is None:
             return self.labeltool.addVideoFile(fname)
 
         progress_bar.close()
-        
+
         return item
 
     def onViewsLockedChanged(self, checked):
         features = QDockWidget.AllDockWidgetFeatures
         if checked:
-            features = QDockWidget.NoDockWidgetFeatures 
+            features = QDockWidget.NoDockWidgetFeatures
 
         self.ui.dockProperties.setFeatures(features)
         self.ui.dockAnnotations.setFeatures(features)

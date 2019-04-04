@@ -1,7 +1,10 @@
 import time
 import logging
-from PyQt4.QtCore import pyqtSignal, QSize, Qt
-from PyQt4.QtGui import QWidget, QGroupBox, QVBoxLayout, QPushButton, QScrollArea, QLineEdit, QDoubleValidator, QIntValidator, QShortcut, QKeySequence
+#from PyQt4.QtCore import pyqtSignal, QSize, Qt
+#from PyQt4.QtGui import QWidget, QGroupBox, QVBoxLayout, QPushButton, QScrollArea, QLineEdit, QDoubleValidator, QIntValidator, QShortcut, QKeySequence
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
 from sloth.core.exceptions import ImproperlyConfigured
 from sloth.annotations.model import AnnotationModelItem
 from sloth.gui.floatinglayout import FloatingLayout
@@ -353,8 +356,7 @@ class PropertyEditor(QWidget):
         self.parseConfiguration(label_class, label_config)
 
         # Add label class button
-        button_text = label_config['text']
-        button = QPushButton(button_text, self)
+        button = QPushButton(label_class, self)
         button.setCheckable(True)
         button.setFlat(True)
         button.clicked.connect(bind(self.onClassButtonPressed, label_class))

@@ -3,8 +3,11 @@ This is the core labeltool module.
 """
 import os
 import sys
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
+# from PyQt4.QtGui import *
+# from PyQt4.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
 from sloth.annotations.model import *
 from sloth.annotations.container import AnnotationContainerFactory, AnnotationContainer
 from sloth.conf import config
@@ -18,9 +21,15 @@ import logging
 LOG = logging.getLogger(__name__)
 
 try:
-    import okapy.videoio as okv
+    import moviepy.editor as mp
 except ImportError:
-    pass
+    print("Unable to load moviepy for movie loading.")
+
+
+# try:
+#     import okapy.videoio as okv
+# except ImportError:
+#     pass
 
 
 class LabelTool(QObject):
@@ -100,13 +109,16 @@ class LabelTool(QObject):
                                  option_list=BaseCommand.option_list)
         try:
             options, args = parser.parse_args(self.argv)
-        except:
-            pass  # Ignore any option errors at this point.
+        except Exception:
+            options, args = None, None
 
         # Initialize logging
-        loglevel = (logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)[int(options.verbosity)]
-        logging.basicConfig(level=loglevel,
-                            format='%(asctime)s %(levelname)-8s %(name)-30s %(message)s')  #, datefmt='%H:%M:%S.%m')
+        loglevel = (logging.CRITICAL, logging.ERROR, logging.WARNING,
+                    logging.INFO, logging.DEBUG)[int(options.verbosity)]
+        logging.basicConfig(
+            level=loglevel,
+            format='%(asctime)s %(levelname)-8s %(name)-30s %(message)s'
+        )
 
         # Disable PyQt log messages
         logging.getLogger("PyQt4").setLevel(logging.WARNING)
@@ -253,7 +265,7 @@ class LabelTool(QObject):
             ann = self._model.root().getAnnotations()
 
             self._container.save(ann, fname)
-            #self._model.writeback() # write back changes that are cached in the model itself, e.g. mask updates
+            # self._model.writeback() # write back changes that are cached in the model itself, e.g. mask updates
             msg = "Successfully saved %s (%d files, %d annotations)" % \
                   (fname, self._model.root().numFiles(), self._model.root().numAnnotations())
             success = True
@@ -266,7 +278,7 @@ class LabelTool(QObject):
 
     def clearAnnotations(self):
         self._model = AnnotationModel([])
-        #self._model.setBasedir("")
+        # self._model.setBasedir("")
         self.statusMessage.emit('')
         self.annotationsLoaded.emit()
 
@@ -314,10 +326,10 @@ class LabelTool(QObject):
     def updateModified(self):
         """update all GUI elements which depend on the state of the model,
         e.g. whether it has been modified since the last save"""
-        #self.ui.action_Add_Image.setEnabled(self._model is not None)
+        # self.ui.action_Add_Image.setEnabled(self._model is not None)
         # TODO also disable/enable other items
-        #self.ui.actionSave.setEnabled(self.annotations.dirty())
-        #self.setWindowModified(self.annotations.dirty())
+        # self.ui.actionSave.setEnabled(self.annotations.dirty())
+        # self.setWindowModified(self.annotations.dirty())
         pass
 
     def currentImage(self):
@@ -365,29 +377,25 @@ class LabelTool(QObject):
         # FIXME: Some dialog should be displayed, telling the user that the
         # video is being loaded/indexed and that this might take a while
         LOG.info("Importing frames from %s. This may take a while..." % fname)
-        video = okv.createVideoSourceFromString(fname)
-        video = okv.toRandomAccessVideoSource(video)
+        # video = okv.createVideoSourceFromString(fname)
+        # video = okv.toRandomAccessVideoSource(video)
 
-        # try to convert to iseq, getting all timestamps will be significantly faster
-        iseq = okv.toImageSeqReader(video)
-        if iseq is not None:
-            timestamps = iseq.getTimestamps()
+        f = mp.VideoFileClip(fname)
+        if f is not None:
+            timestamps = list(range(int(f.fps * f.duration)))
             LOG.debug("Adding %d frames" % len(timestamps))
             fileitem['frames'] = [{'annotations': [], 'num': i,
                                    'timestamp': ts, 'class': 'frame'}
                                   for i, ts in enumerate(timestamps)]
         else:
-            i = 0
-            while video.getNextFrame():
-                LOG.debug("Adding frame %d" % i)
-                ts = video.getTimestamp()
+            for ts, frame in enumerate(f.iter_frames()):
+                LOG.debug("Adding frame %d" % ts)
                 frame = {'annotations': [],
-                         'num': i,
+                         'num': ts,
                          'timestamp': ts,
                          'class': 'frame'
-                }
+                         }
                 fileitem['frames'].append(frame)
-                i += 1
 
         self._model._root.appendFileItem(fileitem)
 

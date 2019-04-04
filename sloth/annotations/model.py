@@ -6,8 +6,11 @@ import time
 import logging
 import copy
 from collections import MutableMapping
-from PyQt4.QtGui import QTreeView, QItemSelection, QItemSelectionModel, QSortFilterProxyModel, QBrush
-from PyQt4.QtCore import QModelIndex, QAbstractItemModel, Qt, pyqtSignal, QVariant, QObject
+# from PyQt4.QtGui import QTreeView, QItemSelection, QItemSelectionModel, QSortFilterProxyModel, QBrush
+# from PyQt4.QtCore import QModelIndex, QAbstractItemModel, Qt, pyqtSignal, QVariant, QObject
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
 
 LOG = logging.getLogger(__name__)
 
@@ -96,14 +99,10 @@ class ModelItem:
         return self._children[pos]
 
     def getPreviousSibling(self, step=1):
-        # clip, instead of wrap around
-        if self._row - step < 0:
-            return self.getSibling(self._row)
-        else:
-            return self.getSibling(self._row-step)
+        return self.getSibling(self._row - step)
 
     def getNextSibling(self, step=1):
-        return self.getSibling(self._row+step)
+        return self.getSibling(self._row + step)
 
     def getSibling(self, row):
         if self._parent is not None:
@@ -114,9 +113,9 @@ class ModelItem:
         return None
 
     def _attachToModel(self, model):
-        #assert self.model() is None
-        #assert self.parent() is not None
-        #assert self.parent().model() is not None
+        # assert self.model() is None
+        # assert self.parent() is not None
+        # assert self.parent().model() is not None
 
         self._model = model
         for item in self._children:
@@ -138,7 +137,7 @@ class ModelItem:
 
     def replaceChild(self, pos, item):
         item._parent = self
-        item._row    = pos
+        item._row = pos
         self._children[pos] = item
         if self._model is not None:
             self._children[pos]._attachToModel(self._model)
@@ -152,7 +151,7 @@ class ModelItem:
             self._model.beginInsertRows(self.index(), next_row, next_row)
 
         item._parent = self
-        item._row    = next_row
+        item._row = next_row
         self._children.insert(next_row, item)
 
         if pos >= 0:
@@ -165,10 +164,10 @@ class ModelItem:
                 self._model.endInsertRows()
 
     def appendChildren(self, items, signalModel=True):
-        #for item in items:
-            #assert isinstance(item, ModelItem)
-            #assert item.model() is None
-            #assert item.parent() is None
+        # for item in items:
+        # assert isinstance(item, ModelItem)
+        # assert item.model() is None
+        # assert item.parent() is None
 
         next_row = len(self._children)
         if self._model is not None and signalModel:
@@ -461,7 +460,7 @@ class ImageFileModelItem(FileModelItem, ImageModelItem):
         for ann in self._annotation_data:
             self._children.append(ann)
             self._toload.append(ann)
-        self._loaded = False        
+        self._loaded = False
 
     def _load(self, index):
         self._toload.remove(self._children[index])
@@ -611,7 +610,7 @@ class AnnotationModel(QAbstractItemModel):
         self._dirty = False
         self._root = RootModelItem(self, annotations)
         diff = time.time() - start
-        LOG.info("Created AnnotationModel in %.2fs" % (diff, ))
+        LOG.info("Created AnnotationModel in %.2fs" % (diff,))
 
         self.dataChanged.connect(self.onDataChanged)
         self.rowsInserted.connect(self.onDataChanged)
@@ -755,6 +754,7 @@ class AnnotationSortFilterProxyModel(QSortFilterProxyModel):
     """Adds sorting and filtering support to the AnnotationModel without basically
     any implementation effort.  Special functions such as ``insertPoint()`` just
     call the source models respective functions."""
+
     def __init__(self, parent=None):
         super(AnnotationSortFilterProxyModel, self).__init__(parent)
 
@@ -796,7 +796,7 @@ class AnnotationTreeView(QTreeView):
         self.setSelectionBehavior(QTreeView.SelectRows)
         self.setAllColumnsShowFocus(True)
         self.setAlternatingRowColors(True)
-        #self.setEditTriggers(QAbstractItemView.SelectedClicked)
+        # self.setEditTriggers(QAbstractItemView.SelectedClicked)
         self.setSortingEnabled(True)
         self.setAnimated(True)
         self.expanded.connect(self.onExpanded)
@@ -817,19 +817,20 @@ class AnnotationTreeView(QTreeView):
         self.resizeColumns()
 
     def setSelectedItems(self, items):
-        #block = self.blockSignals(True)
+        # block = self.blockSignals(True)
         sel = QItemSelection()
         for item in items:
             sel.merge(QItemSelection(item.index(), item.index(1)), QItemSelectionModel.SelectCurrent)
         if set(sel) != set(self.selectionModel().selection()):
             self.selectionModel().clear()
             self.selectionModel().select(sel, QItemSelectionModel.Select)
-        #self.blockSignals(block)
+        # self.blockSignals(block)
 
     def selectionChanged(self, selected, deselected):
-        items = [ self.model().itemFromIndex(index) for index in self.selectionModel().selectedIndexes()]
+        items = [self.model().itemFromIndex(index) for index in self.selectionModel().selectedIndexes()]
         self.selectedItemsChanged.emit(items)
         QTreeView.selectionChanged(self, selected, deselected)
+
 
 #######################################################################################
 # utility functions
@@ -871,7 +872,7 @@ class CopyAnnotations(QObject):
                                     cont = True
                                     break
                         if cont:
-                            continue # do not copy
+                            continue  # do not copy
 
                 # copy the annotation
                 current.addAnnotation(annotation)
@@ -909,7 +910,8 @@ class CopyAnnotations(QObject):
         return (x, y, w, h)
 
     def area(self, r):
-        return r[2]*r[3]
+        return r[2] * r[3]
+
 
 # interpolate annotations between two annotated images
 class InterpolateRange(QObject):
@@ -917,7 +919,7 @@ class InterpolateRange(QObject):
         QObject.__init__(self)
 
         self._lt = labeltool
-        self._overwrite_funcs = [self.defaultOverwriteCheck] 
+        self._overwrite_funcs = [self.defaultOverwriteCheck]
         self._interp_func = self.interpolate
 
         self._wnd = labeltool.mainWindow()
@@ -945,7 +947,7 @@ class InterpolateRange(QObject):
 
     def interpolate(self, p1, p2, step, steps):
         xr = p2 - p1
-        xnew = p1+(xr/(steps+1))*step
+        xnew = p1 + (xr / (steps + 1)) * step
         return xnew
 
     def overwrite(self, annotation):
@@ -971,7 +973,7 @@ class InterpolateRange(QObject):
             steps += 1
             prev = prev.getPreviousSibling()
             # only one "roundtrip", as first frame in set wraps to last
-            if steps > len(self._lt.annotations())+1:
+            if steps > len(self._lt.annotations()) + 1:
                 LOG.info("Couldn't find previous labeled frame")
                 return False
             toInterp.append(prev)
@@ -983,7 +985,7 @@ class InterpolateRange(QObject):
         # TODO: make fuzzy matcher to match annotation objects together...
         fann = first.getAnnotations()['annotations']
         lann = last.getAnnotations()['annotations']
-        if len(fann) != len(lann): # TODO needed?
+        if len(fann) != len(lann):  # TODO needed?
             LOG.error("Error: Annotation count differs in first and last labeled frames, aborting")
             return False
         steps = len(toInterp)
@@ -993,7 +995,7 @@ class InterpolateRange(QObject):
             toInterpAnns.append(copy.deepcopy(fann))
 
         for i in range(len(fann)):
-            LOG.debug("trying annotation %s at idx %s"%(fann[i], i))
+            LOG.debug("trying annotation %s at idx %s" % (fann[i], i))
             # find which "last annotation" matches a certain first
             lannIdx = None
             for l in range(len(lann)):
@@ -1004,15 +1006,16 @@ class InterpolateRange(QObject):
                 continue
 
             for attr in fann[i].keys():
-                firstV = None; lastV = None
+                firstV = None;
+                lastV = None
                 if type(fann[i][attr]) in [type(float()), type(int())]:
                     firstV = fann[i][attr]
                     lastV = lann[lannIdx][attr]
                     for j in range(len(toInterpAnns)):
-                        interp = self._interp_func(firstV, lastV, j+1, steps)
+                        interp = self._interp_func(firstV, lastV, j + 1, steps)
                         toInterpAnns[j][i][attr] = interp
 
-                if type(fann[i][attr])==type(str()) and ";" in fann[i][attr]: # assume its a multi-value list?
+                if type(fann[i][attr]) == type(str()) and ";" in fann[i][attr]:  # assume its a multi-value list?
                     frawVals = fann[i][attr].split(";")
                     lrawVals = lann[lannIdx][attr].split(";")
                     if len(frawVals) != len(lrawVals):
@@ -1028,15 +1031,15 @@ class InterpolateRange(QObject):
                     fVals = []
                     lVals = []
                     for v in range(len(frawVals)):
-                        fVals.append( vtype(frawVals[v]) )
-                        lVals.append( vtype(lrawVals[v]) )
+                        fVals.append(vtype(frawVals[v]))
+                        lVals.append(vtype(lrawVals[v]))
 
                     # write back to toInterpAnns
                     for j in range(len(toInterpAnns)):
                         resVal = ""
                         for v in range(len(frawVals)):
-                            interp = self._interp_func(fVals[v], lVals[v], j+1, steps)
-                            resVal += "%s;"%interp
+                            interp = self._interp_func(fVals[v], lVals[v], j + 1, steps)
+                            resVal += "%s;" % interp
                         resVal = resVal[:-1]
                         toInterpAnns[j][i][attr] = resVal
 
@@ -1048,6 +1051,3 @@ class InterpolateRange(QObject):
                 toInterp[i].addAnnotation(ann)
 
         return True
-
-
-
